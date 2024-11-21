@@ -1,72 +1,61 @@
-import 'server-only';
-
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import {
-  pgTable,
-  text,
-  numeric,
-  integer,
-  timestamp,
-  pgEnum,
-  serial
-} from 'drizzle-orm/pg-core';
-import { count, eq, ilike } from 'drizzle-orm';
-import { createInsertSchema } from 'drizzle-zod';
+import { pgTable, serial, text, timestamp, integer, pgEnum } from 'drizzle-orm/pg-core';
+import { eq, sql } from 'drizzle-orm';
 
-export const db = drizzle(neon(process.env.POSTGRES_URL!));
+// Updated article status enum
+export const articleStatusEnum = pgEnum('article_status', [
+  'Relevant',
+  'Not Relevant',
+  'Ungraded'
+]);
 
-export const statusEnum = pgEnum('status', ['active', 'inactive', 'archived']);
-
-export const products = pgTable('products', {
+export const articles = pgTable('articles', {
   id: serial('id').primaryKey(),
-  imageUrl: text('image_url').notNull(),
-  name: text('name').notNull(),
-  status: statusEnum('status').notNull(),
-  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
-  stock: integer('stock').notNull(),
-  availableAt: timestamp('available_at').notNull()
+  title: text('title').notNull(),
+  author: text('author').notNull(),
+  published_date: timestamp('published_date').notNull(),
+  relevance_score: integer('relevance_score').notNull(),
+  status: articleStatusEnum('status').notNull(),
+  url: text('url').notNull()
 });
 
-export type SelectProduct = typeof products.$inferSelect;
-export const insertProductSchema = createInsertSchema(products);
+export type Article = typeof articles.$inferSelect;
 
-export async function getProducts(
-  search: string,
-  offset: number
-): Promise<{
-  products: SelectProduct[];
-  newOffset: number | null;
-  totalProducts: number;
-}> {
-  // Always search the full table, not per page
-  if (search) {
-    return {
-      products: await db
-        .select()
-        .from(products)
-        .where(ilike(products.name, `%${search}%`))
-        .limit(1000),
-      newOffset: null,
-      totalProducts: 0
-    };
-  }
+const sqlClient = neon(process.env.POSTGRES_URL!);
+const db = drizzle(sqlClient);
 
-  if (offset === null) {
-    return { products: [], newOffset: null, totalProducts: 0 };
-  }
+export async function getArticles(search: string, offset: number) {
+  const limit = 10;
+  const whereClause = search ? sql`title ILIKE ${`%${search}%`}` : sql`TRUE`;
 
-  let totalProducts = await db.select({ count: count() }).from(products);
-  let moreProducts = await db.select().from(products).limit(5).offset(offset);
-  let newOffset = moreProducts.length >= 5 ? offset + 5 : null;
+  const [articlesResult, countResult] = await Promise.all([
+    db.select().from(articles)
+      .where(whereClause)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(articles.published_date),
+    db.select({ count: sql<number>`count(*)::int` }).from(articles).where(whereClause)
+  ]);
 
   return {
-    products: moreProducts,
-    newOffset,
-    totalProducts: totalProducts[0].count
+    articles: articlesResult,
+    totalArticles: countResult[0].count,
+    newOffset: articlesResult.length === limit ? offset + limit : null
   };
 }
 
-export async function deleteProductById(id: number) {
-  await db.delete(products).where(eq(products.id, id));
+export async function updateArticleStatus(articleId: number, newStatus: Article['status']) {
+  await db.update(articles)
+    .set({ status: newStatus })
+    .where(eq(articles.id, articleId));
+}
+
+export async function deleteArticle(articleId: number) {
+  await db.delete(articles).where(eq(articles.id, articleId));
+}
+
+export async function insertArticle(article: Omit<Article, 'id'>) {
+  const result = await db.insert(articles).values(article).returning();
+  return result[0];
 }

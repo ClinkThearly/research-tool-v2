@@ -1,3 +1,5 @@
+import React from 'react';
+
 export function UsersIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
@@ -108,19 +110,15 @@ export function Logo() {
   );
 }
 
-export function VercelLogo(props: React.SVGProps<SVGSVGElement>) {
+export function EMlogo({ className }: { className?: string }) {
   return (
-    <svg
-      {...props}
-      aria-label="Vercel logomark"
-      height="64"
-      role="img"
-      viewBox="0 0 74 64"
-    >
-      <path
-        d="M37.5896 0.25L74.5396 64.25H0.639648L37.5896 0.25Z"
-        fill="currentColor"
-      ></path>
-    </svg>
-  );
+    <img 
+      src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/ant-logo-8QQGFJcMw1Kg81PQv9HTMh1cId3B05.svg"
+      alt="EM Logo"
+      className={className}
+      width={24}
+      height={24}
+      style={{ width: '100%', height: '100%' }}
+    />
+  )
 }
