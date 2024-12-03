@@ -13,7 +13,6 @@ export const articleStatusEnum = pgEnum('article_status', [
 export const articles = pgTable('articles', {
   id: serial('id').primaryKey(),
   title: text('title').notNull(),
-  author: text('author').notNull(),
   published_date: timestamp('published_date').notNull(),
   relevance_score: integer('relevance_score').notNull(),
   status: articleStatusEnum('status').notNull(),

@@ -2,19 +2,19 @@
 
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TableCell, TableRow } from "@/components/ui/table";
 
 type ArticleProps = {
   id: number;
   title: string;
-  author: string;
   published_date: string;
   relevance_score: number;
   status: 'Relevant' | 'Not Relevant' | 'Ungraded';
   url: string;
 };
 
-export function Article({ id, title, author, published_date, relevance_score, status, url }: ArticleProps) {
-  const [currentStatus, setCurrentStatus] = useState(status);
+export default function Article({ id, title, published_date, relevance_score, status, url }: ArticleProps) {
+  const [currentStatus, setCurrentStatus] = useState<ArticleProps['status']>(status);
 
   const handleStatusChange = async (newStatus: ArticleProps['status']) => {
     try {
@@ -33,7 +33,6 @@ export function Article({ id, title, author, published_date, relevance_score, st
       setCurrentStatus(newStatus);
     } catch (error) {
       console.error('Error updating article status:', error);
-      // You might want to show an error message to the user here
     }
   };
 
@@ -49,16 +48,19 @@ export function Article({ id, title, author, published_date, relevance_score, st
   };
 
   return (
-    <tr key={id}>
-      <td className="py-2 px-4">
-        <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+    <TableRow className="transition-colors hover:bg-accent hover:text-accent-foreground">
+      <TableCell className="py-2 px-4">
+        <span>
           {title}
-        </a>
-      </td>
-      <td className="py-2 px-4">{author}</td>
-      <td className="py-2 px-4">{formatDate(published_date)}</td>
-      <td className="py-2 px-4">{relevance_score}</td>
-      <td className="py-2 px-4">
+          {' '}
+          <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            ({id})
+          </a>
+        </span>
+      </TableCell>
+      <TableCell className="py-2 px-4">{formatDate(published_date)}</TableCell>
+      <TableCell className="py-2 px-4">{relevance_score}</TableCell>
+      <TableCell className="py-2 px-4">
         <Select onValueChange={handleStatusChange} defaultValue={currentStatus}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select status" />
@@ -69,7 +71,7 @@ export function Article({ id, title, author, published_date, relevance_score, st
             <SelectItem value="Ungraded">Ungraded</SelectItem>
           </SelectContent>
         </Select>
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
