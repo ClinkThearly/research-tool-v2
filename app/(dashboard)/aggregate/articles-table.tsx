@@ -18,83 +18,84 @@ import {
 } from "@/components/ui/card";
 import { Article } from "@/lib/db";
 import ArticleComponent from "./article";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 type ArticlesTableProps = {
   articles: Article[];
   offset: number;
   totalArticles: number;
+  sortKey?: string;
+  sortDirection?: 'asc' | 'desc';
 };
 
-type SortConfig = {
-  key: keyof Article | null;
-  direction: 'asc' | 'desc' | null;
-};
-
-export default function ArticlesTable({ articles: initialArticles, offset, totalArticles }: ArticlesTableProps) {
+export default function ArticlesTable({ 
+  articles: initialArticles, 
+  offset, 
+  totalArticles,
+  sortKey: initialSortKey,
+  sortDirection: initialSortDirection
+}: ArticlesTableProps) {
   const [articles, setArticles] = useState<Article[]>(initialArticles);
-  const [sortConfig, setSortConfig] = useState<SortConfig>({
-    key: null,
-    direction: null,
-  });
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const productsPerPage = 10;
 
-  // Update articles when initialArticles prop changes
   useEffect(() => {
     setArticles(initialArticles);
   }, [initialArticles]);
 
   function prevPage() {
+    const params = new URLSearchParams(searchParams);
     const newOffset = Math.max(0, offset - productsPerPage);
-    router.push(`${pathname}?offset=${newOffset}`, { scroll: false });
+    params.set('offset', newOffset.toString());
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   function nextPage() {
+    const params = new URLSearchParams(searchParams);
     const newOffset = offset + productsPerPage;
-    router.push(`${pathname}?offset=${newOffset}`, { scroll: false });
+    params.set('offset', newOffset.toString());
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   const sortData = (key: keyof Article) => {
-    let direction: 'asc' | 'desc' | null = 'asc';
+    const params = new URLSearchParams(searchParams);
+    const currentSortKey = params.get('sort');
+    const currentDirection = params.get('direction');
 
-    if (sortConfig.key === key) {
-      if (sortConfig.direction === 'asc') {
-        direction = 'desc';
-      } else if (sortConfig.direction === 'desc') {
-        direction = null;
+    if (currentSortKey === key) {
+      if (!currentDirection || currentDirection === 'desc') {
+        params.delete('sort');
+        params.delete('direction');
+      } else {
+        params.set('direction', 'desc');
       }
+    } else {
+      params.set('sort', key);
+      params.set('direction', 'asc');
+    }
+    
+    // Maintain the current offset
+    if (offset) {
+      params.set('offset', offset.toString());
     }
 
-    setSortConfig({ key, direction });
-  };
-
-  const getSortedArticles = () => {
-    if (!sortConfig.key || !sortConfig.direction) return articles;
-
-    return [...articles].sort((a, b) => {
-      if (a[sortConfig.key!] < b[sortConfig.key!]) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (a[sortConfig.key!] > b[sortConfig.key!]) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
-    });
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
   const getSortIcon = (columnKey: keyof Article) => {
-    if (sortConfig.key !== columnKey) return <ChevronsUpDown className="h-4 w-4 ml-2" />;
-    if (sortConfig.direction === 'asc') return <ChevronUp className="h-4 w-4 ml-2" />;
-    if (sortConfig.direction === 'desc') return <ChevronDown className="h-4 w-4 ml-2" />;
+    const currentSortKey = searchParams.get('sort');
+    const currentDirection = searchParams.get('direction');
+
+    if (currentSortKey !== columnKey) return <ChevronsUpDown className="h-4 w-4 ml-2" />;
+    if (currentDirection === 'asc') return <ChevronUp className="h-4 w-4 ml-2" />;
+    if (currentDirection === 'desc') return <ChevronDown className="h-4 w-4 ml-2" />;
     return <ChevronsUpDown className="h-4 w-4 ml-2" />;
   };
-
-  const sortedArticles = getSortedArticles();
 
   return (
     <Card>
@@ -147,7 +148,7 @@ export default function ArticlesTable({ articles: initialArticles, offset, total
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y">
-            {sortedArticles.map((article) => {
+            {articles.map((article) => {
               const articleProps = {
                 ...article,
                 published_date: article.published_date.toISOString()
