@@ -1,4 +1,5 @@
 'use client';
+
 import React, { useState } from 'react';
 import {
   Card,
@@ -219,49 +220,111 @@ export default function CataloguePage() {
                     <h3 className="font-semibold text-sm text-foreground">Charts</h3>
                     {currentSlideData.charts && currentSlideData.charts.length > 0 ? (
                       <ul className="list-disc list-inside text-sm text-foreground space-y-4">
-                        {currentSlideData.charts.map((chart: any, idx: number) => (
-                          <li key={idx}>
-                            <strong>{chart.chart_title || 'Chart'}</strong><br />
-                            {chart.chart_type && (
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                <strong>Type:</strong> {chart.chart_type}
-                              </div>
-                            )}
-                            {chart.chart_notes && (
-                              <div className="mt-1 text-sm text-muted-foreground">
-                                <strong>Notes:</strong> {chart.chart_notes}
-                              </div>
-                            )}
-                            {chart.chart_data && typeof chart.chart_data === 'object' && (
-                              <div className="mt-2">
-                                <h4 className="text-sm font-semibold text-foreground mb-1">Chart Data</h4>
-                                <table className="border border-border text-sm w-full">
-                                  <thead>
-                                    <tr>
-                                      {Object.keys(chart.chart_data).map((key) => (
-                                        <th
-                                          key={key}
-                                          className="border border-border px-2 py-1 text-left bg-muted/20"
-                                        >
-                                          {key}
-                                        </th>
-                                      ))}
-                                    </tr>
-                                  </thead>
-                                  <tbody>
-                                    <tr>
-                                      {Object.values(chart.chart_data).map((value, i) => (
-                                        <td key={i} className="border border-border px-2 py-1">
-                                          {String(value)}
-                                        </td>
-                                      ))}
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </div>
-                            )}
-                          </li>
-                        ))}
+                        {currentSlideData.charts.map((chart: any, idx: number) => {
+                          const { chart_title, chart_type, chart_notes, chart_data } = chart;
+
+                          return (
+                            <li key={idx}>
+                              <strong>{chart_title || 'Chart'}</strong><br/>
+                              {chart_type && (
+                                <div className="mt-1 text-sm text-muted-foreground">
+                                  <strong>Type:</strong> {chart_type}
+                                </div>
+                              )}
+                              {chart_notes && (
+                                <div className="mt-1 text-sm text-muted-foreground">
+                                  <strong>Notes:</strong> {chart_notes}
+                                </div>
+                              )}
+
+                              {chart_data && typeof chart_data === 'object' && Object.keys(chart_data).length > 0 && (
+                                <div className="mt-2">
+                                  <h4 className="text-sm font-semibold text-foreground mb-1">Chart Data</h4>
+                                  {(() => {
+                                    const firstValue = chart_data[Object.keys(chart_data)[0]];
+                                    const isNested = typeof firstValue === 'object' && firstValue !== null;
+
+                                    if (!isNested) {
+                                      // Simple key-value pairs
+                                      const keys = Object.keys(chart_data);
+                                      return (
+                                        <div className="overflow-auto">
+                                          <table className="border border-border text-sm w-full">
+                                            <thead>
+                                              <tr>
+                                                {keys.map((key) => (
+                                                  <th
+                                                    key={key}
+                                                    className="border border-border px-2 py-1 text-left bg-muted/20"
+                                                  >
+                                                    {key}
+                                                  </th>
+                                                ))}
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              <tr>
+                                                {Object.values(chart_data).map((value, i) => (
+                                                  <td key={i} className="border border-border px-2 py-1">
+                                                    {String(value)}
+                                                  </td>
+                                                ))}
+                                              </tr>
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      );
+                                    } else {
+                                      // Nested objects
+                                      const columns = Object.keys(chart_data);
+                                      // Gather all row labels from all nested objects
+                                      const rowLabels = Array.from(
+                                        new Set(columns.flatMap((col) => Object.keys(chart_data[col])))
+                                      );
+
+                                      return (
+                                        <div className="overflow-auto">
+                                          <table className="border border-border text-sm w-full">
+                                            <thead>
+                                              <tr>
+                                                <th className="border border-border px-2 py-1 bg-muted/20 text-left"></th>
+                                                {columns.map((col) => (
+                                                  <th
+                                                    key={col}
+                                                    className="border border-border px-2 py-1 bg-muted/20 text-left"
+                                                  >
+                                                    {col}
+                                                  </th>
+                                                ))}
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {rowLabels.map((rowLabel) => (
+                                                <tr key={rowLabel}>
+                                                  <td className="border border-border px-2 py-1 font-semibold bg-muted/10">
+                                                    {rowLabel}
+                                                  </td>
+                                                  {columns.map((col, cIdx) => {
+                                                    const val = chart_data[col][rowLabel];
+                                                    return (
+                                                      <td key={cIdx} className="border border-border px-2 py-1">
+                                                        {val === null || val === undefined ? '' : String(val)}
+                                                      </td>
+                                                    );
+                                                  })}
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                      );
+                                    }
+                                  })()}
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : (
                       <p className="text-sm text-muted-foreground">No charts available</p>
@@ -277,28 +340,30 @@ export default function CataloguePage() {
                           <div key={idx} className="mb-4">
                             <strong>{table.table_title || 'Table'}</strong>
                             {table.table_headers && (
-                              <table className="border border-border text-sm w-full mt-2">
-                                <thead>
-                                  <tr>
-                                    {table.table_headers.map((header: string, h_idx: number) => (
-                                      <th key={h_idx} className="border border-border px-2 py-1 text-left bg-muted/20">
-                                        {header}
-                                      </th>
-                                    ))}
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {table.table_rows && table.table_rows.map((row: any[], r_idx: number) => (
-                                    <tr key={r_idx}>
-                                      {row.map((cell: string, c_idx: number) => (
-                                        <td key={c_idx} className="border border-border px-2 py-1">
-                                          {cell}
-                                        </td>
+                              <div className="overflow-auto mt-2">
+                                <table className="border border-border text-sm w-full">
+                                  <thead>
+                                    <tr>
+                                      {table.table_headers.map((header: string, h_idx: number) => (
+                                        <th key={h_idx} className="border border-border px-2 py-1 text-left bg-muted/20">
+                                          {header}
+                                        </th>
                                       ))}
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+                                  <tbody>
+                                    {table.table_rows && table.table_rows.map((row: any[], r_idx: number) => (
+                                      <tr key={r_idx}>
+                                        {row.map((cell: string, c_idx: number) => (
+                                          <td key={c_idx} className="border border-border px-2 py-1">
+                                            {cell}
+                                          </td>
+                                        ))}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
                             )}
                           </div>
                         ))}
