@@ -8,15 +8,17 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined }
 };
 
-export default async function AggregatePage({ searchParams }: Props) {
-  // Properly type narrow the search params
-  const searchQuery = Array.isArray(searchParams?.q) ? searchParams.q[0] : searchParams?.q || '';
-  const offsetStr = Array.isArray(searchParams?.offset) ? searchParams.offset[0] : searchParams?.offset || '0';
+export default async function AggregatePage({
+  searchParams
+}: {
+  searchParams: { [key: string]: string | string[] }
+}) {
+  const searchQuery = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q || '';
+  const offsetStr = Array.isArray(searchParams.offset) ? searchParams.offset[0] : searchParams.offset || '0';
   const offset = parseInt(offsetStr, 10) || 0;
-  const sortKey = Array.isArray(searchParams?.sort) ? searchParams.sort[0] : searchParams?.sort;
-  const sortDirection = Array.isArray(searchParams?.direction) ? searchParams.direction[0] : searchParams?.direction;
+  const sortKey = Array.isArray(searchParams.sort) ? searchParams.sort[0] : searchParams.sort;
+  const sortDirection = Array.isArray(searchParams.direction) ? searchParams.direction[0] : searchParams.direction;
 
-  // Get the articles
   const { articles, totalArticles } = await getArticles(searchQuery, offset, sortKey, sortDirection);
 
   return (

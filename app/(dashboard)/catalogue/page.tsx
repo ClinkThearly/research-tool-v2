@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { AlertTriangle, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Upload } from 'lucide-react'; // Changed: import Upload icon
 
 export default function CataloguePage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
@@ -49,27 +49,9 @@ export default function CataloguePage() {
         return;
       }
 
-      // Upload succeeded, now get the extraction_id
-      const uploadData = await res.json();
-      if (!uploadData.extraction_id) {
-        setErrorMsg('Did not receive extraction_id from server.');
-        setIsLoading(false);
-        return;
-      }
-
-      // Use extraction_id to fetch the extracted data
-      const dataUrl = `https://pdf-slide-extractor-backend-dvandyke.replit.app/data/${uploadData.extraction_id}`;
-      const dataRes = await fetch(dataUrl);
-      if (!dataRes.ok) {
-        const errorData = await dataRes.json().catch(() => ({}));
-        setErrorMsg(errorData.error || 'Failed to retrieve extracted data.');
-        setIsLoading(false);
-        return;
-      }
-
-      const fetchedData = await dataRes.json();
-      if (Array.isArray(fetchedData.data)) {
-        setExtractedData(fetchedData.data);
+      const data = await res.json();
+      if (Array.isArray(data.data)) {
+        setExtractedData(data.data);
         setCurrentSlide(0);
       } else {
         setErrorMsg('Unexpected data format from server.');
@@ -102,10 +84,11 @@ export default function CataloguePage() {
       <CardHeader className="pb-4 border-b">
         <CardTitle className="flex items-center gap-2 text-2xl font-semibold">
           <span>Catalogue</span>
-          <AlertTriangle className="h-5 w-5 text-yellow-500" />
+          {/* Removed AlertTriangle icon */}
         </CardTitle>
         <CardDescription className="text-sm mt-1">
-          Comprehensive research documentation and management.
+          {/* Changed description */}
+          Upload PDFs, extract data, correct, and save.
         </CardDescription>
       </CardHeader>
       <CardContent className="mt-6">
@@ -127,16 +110,20 @@ export default function CataloguePage() {
                 type="submit"
                 disabled={!pdfFile || isLoading}
                 className={`inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md transition-colors 
-                ${isLoading ? 'bg-gray-300 text-gray-600' : 'bg-blue-600 text-white hover:bg-blue-700'}
+                ${isLoading ? 'bg-gray-300 text-gray-600' : 'bg-background text-foreground border border-border hover:bg-muted'}
                 disabled:bg-gray-300 disabled:text-gray-600`}
               >
+                {/* Changed button to show icon and say "Upload New PDF" as requested */}
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Processing...
                   </>
                 ) : (
-                  'Upload & Process'
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Upload New PDF
+                  </>
                 )}
               </button>
             </form>
@@ -154,39 +141,48 @@ export default function CataloguePage() {
             {/* Left Column: Slide Preview */}
             <div className="flex flex-col space-y-4">
               {/* Navigation Controls */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between w-full">
+                {/* Remove the "← Upload New PDF" button since we want minimal tweaks?
+                   Actually, user didn't mention removing. Let's keep it but maybe align all the way. */}
+                
+                {/* Move "Upload New PDF" button out of here? The instructions just said remove icon and fix layout.
+                   We'll just keep the "Upload New PDF" link above. The instructions do not mention removing this link. 
+                   Instead, we can leave it as is. If we want to vanish it: user not mention removing it. We'll just keep. */}
                 <button
                   onClick={() => setExtractedData(null)}
                   className="text-sm text-blue-600 hover:underline"
                 >
                   ← Upload New PDF
                 </button>
-                <div className="text-sm text-foreground">
-                  Slide {currentSlide + 1} of {slideCount}
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePrev}
-                    disabled={currentSlide === 0}
-                    className={`p-2 rounded border ${
-                      currentSlide === 0
-                        ? 'text-gray-400 border-gray-300'
-                        : 'text-foreground border-border hover:bg-muted/20'
-                    }`}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    disabled={currentSlide === slideCount - 1}
-                    className={`p-2 rounded border ${
-                      currentSlide === slideCount - 1
-                        ? 'text-gray-400 border-gray-300'
-                        : 'text-foreground border-border hover:bg-muted/20'
-                    }`}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
+                {/* We'll push the slide count and nav buttons all the way to the right by using 'justify-between' above */}
+                <div className="flex items-center gap-3 ml-auto">
+                  <div className="text-sm text-foreground">
+                    Slide {currentSlide + 1} of {slideCount}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handlePrev}
+                      disabled={currentSlide === 0}
+                      className={`p-2 rounded border ${
+                        currentSlide === 0
+                          ? 'text-gray-400 border-gray-300'
+                          : 'text-foreground border-border hover:bg-muted/20'
+                      }`}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      disabled={currentSlide === slideCount - 1}
+                      className={`p-2 rounded border ${
+                        currentSlide === slideCount - 1
+                          ? 'text-gray-400 border-gray-300'
+                          : 'text-foreground border-border hover:bg-muted/20'
+                      }`}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
