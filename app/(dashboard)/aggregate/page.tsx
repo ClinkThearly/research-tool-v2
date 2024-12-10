@@ -4,18 +4,28 @@ import { Button } from '@/components/ui/button';
 import ArticlesTable from './articles-table';
 import { getArticles } from '@/lib/db';
 
-export default async function AggregatePage({
-  searchParams
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
-}) {
-  const searchQuery = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q ?? '';
-  const offsetStr = Array.isArray(searchParams.offset) ? searchParams.offset[0] : searchParams.offset ?? '0';
-  const offset = parseInt(offsetStr, 10) || 0;
-  const sortKey = Array.isArray(searchParams.sort) ? searchParams.sort[0] : searchParams.sort;
-  const sortDirection = Array.isArray(searchParams.direction) ? searchParams.direction[0] : searchParams.direction;
+export default async function AggregatePage(
+  props: {
+    searchParams: Promise<{ q?: string; offset?: string; sort?: string; direction?: string }>
+  }
+) {
+  // Await the incoming searchParams, as done in the original snippet.
+  const searchParams = await props.searchParams;
+  
+  const search = searchParams.q ?? '';
+  const offsetStr = searchParams.offset ?? '0';
+  const offset = Number(offsetStr);
 
-  const { articles, totalArticles } = await getArticles(searchQuery, offset, sortKey, sortDirection);
+  const sortKey = searchParams.sort;
+  const sortDirection = searchParams.direction;
+
+  // Fetch articles based on the extracted params
+  const { articles, totalArticles } = await getArticles(
+    search,
+    offset,
+    sortKey,
+    sortDirection
+  );
 
   return (
     <>
