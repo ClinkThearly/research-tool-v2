@@ -49,9 +49,27 @@ export default function CataloguePage() {
         return;
       }
 
-      const data = await res.json();
-      if (Array.isArray(data.data)) {
-        setExtractedData(data.data);
+      // Upload succeeded, now get the extraction_id
+      const uploadData = await res.json();
+      if (!uploadData.extraction_id) {
+        setErrorMsg('Did not receive extraction_id from server.');
+        setIsLoading(false);
+        return;
+      }
+
+      // Use extraction_id to fetch the extracted data
+      const dataUrl = `https://pdf-slide-extractor-backend-dvandyke.replit.app/data/${uploadData.extraction_id}`;
+      const dataRes = await fetch(dataUrl);
+      if (!dataRes.ok) {
+        const errorData = await dataRes.json().catch(() => ({}));
+        setErrorMsg(errorData.error || 'Failed to retrieve extracted data.');
+        setIsLoading(false);
+        return;
+      }
+
+      const fetchedData = await dataRes.json();
+      if (Array.isArray(fetchedData.data)) {
+        setExtractedData(fetchedData.data);
         setCurrentSlide(0);
       } else {
         setErrorMsg('Unexpected data format from server.');
