@@ -4,17 +4,13 @@ import { Button } from '@/components/ui/button';
 import ArticlesTable from './articles-table';
 import { getArticles } from '@/lib/db';
 
-type Props = {
-  searchParams: { [key: string]: string | string[] | undefined }
-};
-
 export default async function AggregatePage({
   searchParams
 }: {
-  searchParams: { [key: string]: string | string[] }
+  searchParams: { [key: string]: string | string[] | undefined }
 }) {
-  const searchQuery = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q || '';
-  const offsetStr = Array.isArray(searchParams.offset) ? searchParams.offset[0] : searchParams.offset || '0';
+  const searchQuery = Array.isArray(searchParams.q) ? searchParams.q[0] : searchParams.q ?? '';
+  const offsetStr = Array.isArray(searchParams.offset) ? searchParams.offset[0] : searchParams.offset ?? '0';
   const offset = parseInt(offsetStr, 10) || 0;
   const sortKey = Array.isArray(searchParams.sort) ? searchParams.sort[0] : searchParams.sort;
   const sortDirection = Array.isArray(searchParams.direction) ? searchParams.direction[0] : searchParams.direction;
